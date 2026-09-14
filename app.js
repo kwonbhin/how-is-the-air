@@ -20,6 +20,57 @@ const FRIENDLY_ERROR = {
 };
  
 /* ============================================================
+ * 시간대별 하늘 테마 (서울/KST 기준)
+ * ============================================================ */
+const TIME_THEME_LABEL = { dawn: "새벽·일출", day: "낮", dusk: "노을", night: "밤" };
+ 
+function getKstHour() {
+  return Number(
+    new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Seoul", hour: "2-digit", hour12: false }).format(new Date())
+  );
+}
+ 
+function getTimeTheme() {
+  const hour = getKstHour();
+  if (hour >= 5 && hour < 7) return "dawn";
+  if (hour >= 7 && hour < 17) return "day";
+  if (hour >= 17 && hour < 19) return "dusk";
+  return "night";
+}
+ 
+function applyTimeTheme() {
+  const theme = getTimeTheme();
+  document.body.dataset.theme = theme;
+  const label = document.getElementById("theme-label");
+  if (label) label.textContent = TIME_THEME_LABEL[theme];
+}
+ 
+/* ============================================================
+ * 미세먼지 값 → 화면 뿌연 정도 + 등급 배지
+ * (기준은 한국 환경부 PM2.5 등급을 단순화한 참고용 구간입니다)
+ * ============================================================ */
+const AIR_LEVELS = [
+  { max: 15, label: "좋음", emoji: "🟢" },
+  { max: 35, label: "보통", emoji: "🟡" },
+  { max: 75, label: "나쁨", emoji: "🟠" },
+  { max: Infinity, label: "매우나쁨", emoji: "🔴" },
+];
+ 
+function applyAirHaze(value) {
+  const haze = document.getElementById("haze-layer");
+  const badge = document.getElementById("air-badge");
+  if (haze) {
+    // 0~150 µg/m³ 범위를 뿌연 정도(투명도) 0.08~0.62로 매핑
+    const opacity = Math.min(0.62, Math.max(0.08, value / 150));
+    haze.style.opacity = String(opacity);
+  }
+  if (badge) {
+    const level = AIR_LEVELS.find((l) => value <= l.max);
+    badge.textContent = `${level.emoji} ${level.label} · ${fmt1(value)}µg/m³`;
+  }
+}
+ 
+/* ============================================================
  * ① 공개 보존 기록 렌더 (히어로 숫자 + 값 그래프 + 표)
  * ============================================================ */
 async function loadPublicRecords() {
@@ -33,10 +84,13 @@ async function loadPublicRecords() {
     if (records.length === 0) {
       container.innerHTML = `<p class="loading">아직 수집된 공개 기록이 없습니다. 첫 자동 수집(또는 수동 실행) 이후 표시됩니다.</p>`;
       tbody.innerHTML = `<tr><td colspan="5">아직 없음</td></tr>`;
+      const badge = document.getElementById("air-badge");
+      if (badge) badge.textContent = "아직 없음";
       return;
     }
  
     const { delta, prev, latest } = computeDelta(records, LIVE_SIGNAL_ID);
+    applyAirHaze(latest.normalized_value);
  
     const deltaLine =
       delta === null
@@ -231,6 +285,7 @@ function escapeAttr(str) {
  
 /* ============================================================ init ============================================================ */
 document.addEventListener("DOMContentLoaded", () => {
+  applyTimeTheme();
   loadPublicRecords();
  
   document.querySelectorAll("[data-fixture]").forEach((btn) => {
