@@ -6,7 +6,7 @@ import {
   formatKst,
 } from "./lib/engine.js";
  
-const LIVE_SIGNAL_ID = "seoul-pm25";
+const LIVE_SIGNAL_ID = "daegu-pm25";
  
 // 기술 용어 → 쉬운 말 설명. 괄호 안에 원래 코드값도 같이 보여줘서
 // (채점 기준이 요구하는 error_code 표기는 그대로 유지하면서) 이해하기 쉽게 만듭니다.
@@ -20,58 +20,45 @@ const FRIENDLY_ERROR = {
 };
  
 /* ============================================================
- * 시간대별 하늘 테마 (서울/KST 기준)
+ * 계기판(반원형) + 지도 뿌연 효과 — 미세먼지 값 시각화
+ * (등급 구간은 한국 환경부 PM2.5 등급을 단순화한 참고용입니다)
  * ============================================================ */
-const TIME_THEME_LABEL = { dawn: "새벽·일출", day: "낮", dusk: "노을", night: "밤" };
- 
-function getKstHour() {
-  return Number(
-    new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Seoul", hour: "2-digit", hour12: false }).format(new Date())
-  );
-}
- 
-function getTimeTheme() {
-  const hour = getKstHour();
-  if (hour >= 5 && hour < 7) return "dawn";
-  if (hour >= 7 && hour < 17) return "day";
-  if (hour >= 17 && hour < 19) return "dusk";
-  return "night";
-}
- 
-function applyTimeTheme() {
-  const theme = getTimeTheme();
-  document.body.dataset.theme = theme;
-  const label = document.getElementById("theme-label");
-  if (label) label.textContent = TIME_THEME_LABEL[theme];
-}
- 
-/* ============================================================
- * 미세먼지 값 → 화면 뿌연 정도 + 등급 배지
- * (기준은 한국 환경부 PM2.5 등급을 단순화한 참고용 구간입니다)
- * ============================================================ */
+const GAUGE_MAX = 150; // 계기판이 표현하는 최대값(µg/m³). 이보다 크면 바늘이 끝에 고정됨
 const AIR_LEVELS = [
-  { max: 15, label: "좋음", emoji: "🟢" },
-  { max: 35, label: "보통", emoji: "🟡" },
-  { max: 75, label: "나쁨", emoji: "🟠" },
-  { max: Infinity, label: "매우나쁨", emoji: "🔴" },
+  { max: 15, label: "좋음" },
+  { max: 35, label: "보통" },
+  { max: 75, label: "나쁨" },
+  { max: Infinity, label: "매우나쁨" },
 ];
  
-function applyAirHaze(value) {
-  const haze = document.getElementById("haze-layer");
-  const badge = document.getElementById("air-badge");
+function applyAirVisuals(value) {
+  const needle = document.getElementById("gauge-needle");
+  const gaugeValue = document.getElementById("gauge-value");
+  const haze = document.getElementById("map-haze");
+ 
+  const clamped = Math.min(GAUGE_MAX, Math.max(0, value));
+  const deg = (clamped / GAUGE_MAX) * 180;
+  if (needle) needle.setAttribute("transform", `rotate(${deg} 110 110)`);
+ 
+  const level = AIR_LEVELS.find((l) => value <= l.max);
+  if (gaugeValue) gaugeValue.textContent = `${fmt1(value)}µg/m³ · ${level.label}`;
+ 
   if (haze) {
-    // 0~150 µg/m³ 범위를 뿌연 정도(투명도) 0.08~0.62로 매핑
-    const opacity = Math.min(0.62, Math.max(0.08, value / 150));
+    // 0~150 µg/m³ 범위를 뿌연 정도(투명도) 0.08~0.78로 매핑
+    const opacity = Math.min(0.78, Math.max(0.08, value / 150));
     haze.style.opacity = String(opacity);
-  }
-  if (badge) {
-    const level = AIR_LEVELS.find((l) => value <= l.max);
-    badge.textContent = `${level.emoji} ${level.label} · ${fmt1(value)}µg/m³`;
   }
 }
  
+function setTodayLabel() {
+  const el = document.getElementById("theme-label-date");
+  if (!el) return;
+  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul" }).format(new Date());
+  el.textContent = today;
+}
+ 
 /* ============================================================
- * ① 공개 보존 기록 렌더 (히어로 숫자 + 값 그래프 + 표)
+ * ① 공개 보존 기록 렌더
  * ============================================================ */
 async function loadPublicRecords() {
   const container = document.getElementById("latest-reading");
@@ -84,13 +71,11 @@ async function loadPublicRecords() {
     if (records.length === 0) {
       container.innerHTML = `<p class="loading">아직 수집된 공개 기록이 없습니다. 첫 자동 수집(또는 수동 실행) 이후 표시됩니다.</p>`;
       tbody.innerHTML = `<tr><td colspan="5">아직 없음</td></tr>`;
-      const badge = document.getElementById("air-badge");
-      if (badge) badge.textContent = "아직 없음";
       return;
     }
  
     const { delta, prev, latest } = computeDelta(records, LIVE_SIGNAL_ID);
-    applyAirHaze(latest.normalized_value);
+    applyAirVisuals(latest.normalized_value);
  
     const deltaLine =
       delta === null
@@ -256,7 +241,7 @@ function renderSyntheticStatus(description) {
 function renderSyntheticTable() {
   const tbody = document.getElementById("synthetic-tbody");
   if (synthState.records.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="4">아직 없음</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="3">없음</td></tr>`;
     return;
   }
   tbody.innerHTML = synthState.records
@@ -264,7 +249,7 @@ function renderSyntheticTable() {
     .sort((a, b) => (a.record_date < b.record_date ? -1 : 1))
     .map(
       (r) =>
-        `<tr><td>${r.record_date}</td><td>${r.normalized_value}</td><td>${synthState.freshness}</td><td>${synthState.error_code}</td></tr>`
+        `<tr><td>${r.record_date}</td><td>${r.normalized_value}</td><td>${synthState.freshness}/${synthState.error_code}</td></tr>`
     )
     .join("");
 }
@@ -285,7 +270,7 @@ function escapeAttr(str) {
  
 /* ============================================================ init ============================================================ */
 document.addEventListener("DOMContentLoaded", () => {
-  applyTimeTheme();
+  setTodayLabel();
   loadPublicRecords();
  
   document.querySelectorAll("[data-fixture]").forEach((btn) => {
