@@ -215,6 +215,15 @@
       "row_count_after": 2,
       "stored_value": 20.4,
       "record_date": "2026-09-14"
+    },
+    {
+      "at": "2026-09-14T15:36:38.783Z",
+      "status": "ok",
+      "newRowAdded": true,
+      "row_count_before": 2,
+      "row_count_after": 3,
+      "stored_value": 21.1,
+      "record_date": "2026-09-15"
     }
   ]
 }
