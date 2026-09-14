@@ -10,128 +10,95 @@
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="style.css" />
 </head>
-<body>
+<body data-theme="day">
  
-  <header class="hero">
-    <div class="hero-sky" aria-hidden="true">
-      <svg class="drift-path-svg" viewBox="0 0 1200 200" preserveAspectRatio="none">
-        <path id="drift-path" d="M -50 150 Q 300 40 650 90 T 1250 60"
-              fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="6 8" opacity="0.32" />
-        <g class="dust-group" fill="var(--sun-deep)" opacity="0.85">
-          <circle r="7" />
-          <animateMotion dur="9s" begin="0.2s" fill="freeze" rotate="auto" calcMode="linear">
-            <mpath href="#drift-path" />
-          </animateMotion>
-        </g>
-        <g class="dust-group" fill="var(--horizon)" opacity="0.6">
-          <circle r="4" />
-          <animateMotion dur="9s" begin="1.6s" fill="freeze" rotate="auto" calcMode="linear">
-            <mpath href="#drift-path" />
-          </animateMotion>
-        </g>
-        <g class="dust-group" fill="var(--sun)" opacity="0.7">
-          <circle r="5" />
-          <animateMotion dur="9s" begin="3s" fill="freeze" rotate="auto" calcMode="linear">
-            <mpath href="#drift-path" />
-          </animateMotion>
-        </g>
-      </svg>
-    </div>
-    <h1 class="page-title">지금, 우리 동네 공기</h1>
-    <p class="hero-caption">서울 초미세먼지(PM2.5) 실측 기록</p>
-  </header>
+  <!-- 배경: 시간대별 하늘 + 해/달 + 미세먼지 뿌연 효과 -->
+  <div class="sky-backdrop" aria-hidden="true">
+    <div class="sky-stars"></div>
+    <div class="sky-orb" id="sky-orb"></div>
+    <div class="haze-layer" id="haze-layer"></div>
+  </div>
  
-  <main>
- 
-    <!-- 카드1·4·5: 실제 공개 기록 (값·단위·출처·시각·시간대 + 일별 기록) -->
-    <section class="card" id="public-record-card" aria-labelledby="public-record-title">
-      <h2 id="public-record-title">지금까지의 기록 <span class="badge badge-live">실제 데이터</span></h2>
-      <p class="hint">
-        매일 자동으로(GitHub Actions가 서버에서 실행) 이 저장소의 <code>data/records.json</code>에 저장된 기록이에요.
-        로그인 없이 누구나 같은 화면을 봅니다.
-      </p>
- 
-      <div id="latest-reading" class="reading-block" aria-live="polite">
-        <p class="loading">불러오는 중…</p>
+  <div class="dashboard">
+    <header class="dash-header">
+      <div>
+        <h1>지금, 우리 동네 공기</h1>
+        <p class="dash-sub">서울 초미세먼지(PM2.5) · <span id="theme-label">낮</span> 하늘</p>
       </div>
+      <div id="air-badge" class="air-badge">불러오는 중…</div>
+    </header>
  
-      <table class="records-table" id="records-table">
-        <thead>
-          <tr>
-            <th>날짜(KST)</th>
-            <th>PM2.5 농도</th>
-            <th>출처 시각(KST)</th>
-            <th>조회 시각(KST)</th>
-            <th>원자료 대조</th>
-          </tr>
-        </thead>
-        <tbody id="records-tbody">
-          <tr><td colspan="5">불러오는 중…</td></tr>
-        </tbody>
-      </table>
-    </section>
+    <main class="dash-grid">
+      <!-- 왼쪽: 실제 공개 기록 -->
+      <section class="panel" id="public-record-card" aria-labelledby="public-record-title">
+        <h2 id="public-record-title">지금까지의 기록 <span class="badge badge-live">실제 데이터</span></h2>
  
-    <!-- 카드3: 다섯 가지 실패 + 복구 -->
-    <section class="card" id="synthetic-card" aria-labelledby="synthetic-title">
-      <h2 id="synthetic-title">신호가 끊기면? <span class="badge badge-synthetic">가짜 상황극 · 실제 아님</span></h2>
-      <p class="hint">
-        아래 버튼은 공식 배포 fixture로 "값을 못 가져올 때" 5가지 상황을 재현합니다.
-        진짜 대기질 데이터에는 영향 없고, 값도 실제 PM2.5가 아니라 연습용 숫자(pt)예요.
-      </p>
+        <div id="latest-reading" class="reading-block" aria-live="polite">
+          <p class="loading">불러오는 중…</p>
+        </div>
  
-      <div class="replay-steps">
-        <button class="btn" data-fixture="reset">↺ 연습 초기화</button>
-        <button class="btn" data-fixture="normal-d1-a">1일차 첫 조회 (100)</button>
-        <button class="btn" data-fixture="normal-d1-b">1일차 재조회 (105, 같은 행 갱신)</button>
-      </div>
+        <div class="table-scroll">
+          <table class="records-table" id="records-table">
+            <thead>
+              <tr>
+                <th>날짜(KST)</th>
+                <th>PM2.5</th>
+                <th>출처 시각</th>
+                <th>조회 시각</th>
+                <th>대조</th>
+              </tr>
+            </thead>
+            <tbody id="records-tbody">
+              <tr><td colspan="5">불러오는 중…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
  
-      <p class="hint small" style="margin-top:16px;">위 두 개를 먼저 누른 다음, 아래 다섯 상황 중 하나를 눌러보세요 →</p>
-      <div class="replay-steps fail-grid">
-        <button class="btn btn-fail" data-fixture="timeout">
-          <span class="fail-emoji">🐢</span> 응답이 너무 늦게 옴
-          <small>timeout</small>
-        </button>
-        <button class="btn btn-fail" data-fixture="auth-401">
-          <span class="fail-emoji">🔒</span> 측정소 서버가 문을 안 열어줌
-          <small>401 · auth</small>
-        </button>
-        <button class="btn btn-fail" data-fixture="rate-429">
-          <span class="fail-emoji">🙅</span> 너무 자주 물어봐서 제지당함
-          <small>429 · rate_limit</small>
-        </button>
-        <button class="btn btn-fail" data-fixture="offline">
-          <span class="fail-emoji">📡</span> 인터넷이 뚝 끊김
-          <small>offline</small>
-        </button>
-        <button class="btn btn-fail" data-fixture="schema-break">
-          <span class="fail-emoji">🧩</span> 응답 모양이 갑자기 이상해짐
-          <small>schema_error</small>
-        </button>
-      </div>
+      <!-- 오른쪽: 다섯 가지 실패 + 복구 -->
+      <section class="panel" id="synthetic-card" aria-labelledby="synthetic-title">
+        <h2 id="synthetic-title">신호가 끊기면? <span class="badge badge-synthetic">가짜 상황극</span></h2>
  
-      <div class="replay-steps" style="margin-top:16px;">
-        <button class="btn btn-recover" data-fixture="recover-d2">↻ 다시 시도해서 복구되는지 보기</button>
-        <button class="btn" data-fixture="normal-d2">다음날 정상 조회 직접 보기 (+15)</button>
-      </div>
+        <div class="replay-steps">
+          <button class="btn" data-fixture="reset">↺ 초기화</button>
+          <button class="btn" data-fixture="normal-d1-a">1일차(100)</button>
+          <button class="btn" data-fixture="normal-d1-b">재조회(105)</button>
+        </div>
  
-      <div id="synthetic-status" class="status-panel" aria-live="polite">
-        <p class="loading">위 버튼을 눌러 시작하세요. (순서: 1일차 첫 조회 → 1일차 재조회 → 실패 상황 하나 → 다시 시도)</p>
-      </div>
+        <div class="replay-steps fail-grid">
+          <button class="btn btn-fail" data-fixture="timeout"><span class="fail-emoji">🐢</span>느린 응답<small>timeout</small></button>
+          <button class="btn btn-fail" data-fixture="auth-401"><span class="fail-emoji">🔒</span>문 안 열어줌<small>401</small></button>
+          <button class="btn btn-fail" data-fixture="rate-429"><span class="fail-emoji">🙅</span>제지당함<small>429</small></button>
+          <button class="btn btn-fail" data-fixture="offline"><span class="fail-emoji">📡</span>인터넷 끊김<small>offline</small></button>
+          <button class="btn btn-fail" data-fixture="schema-break"><span class="fail-emoji">🧩</span>형식 이상<small>schema</small></button>
+        </div>
  
-      <table class="records-table" id="synthetic-table">
-        <thead>
-          <tr><th>연습용 날짜</th><th>값(pt)</th><th>상태</th><th>원인 코드</th></tr>
-        </thead>
-        <tbody id="synthetic-tbody">
-          <tr><td colspan="4">아직 없음</td></tr>
-        </tbody>
-      </table>
-    </section>
-  </main>
+        <div class="replay-steps">
+          <button class="btn btn-recover" data-fixture="recover-d2">↻ 다시 시도(복구)</button>
+          <button class="btn" data-fixture="normal-d2">다음날(+15)</button>
+        </div>
  
-  <footer class="page-footer">
-    <p>데이터 출처: <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a> (CC BY 4.0) — 열쇠(API 키) 없이 누구나 이용 가능.</p>
-  </footer>
+        <div id="synthetic-status" class="status-panel" aria-live="polite">
+          <p class="loading">순서: 1일차 → 재조회 → 실패 하나 → 다시 시도</p>
+        </div>
+ 
+        <div class="table-scroll small">
+          <table class="records-table" id="synthetic-table">
+            <thead>
+              <tr><th>날짜</th><th>값(pt)</th><th>상태</th><th>코드</th></tr>
+            </thead>
+            <tbody id="synthetic-tbody">
+              <tr><td colspan="4">아직 없음</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+ 
+    <footer class="dash-footer">
+      <p>출처: <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a> (CC BY 4.0) · 열쇠 없이 누구나 이용 가능</p>
+    </footer>
+  </div>
  
   <script type="module" src="app.js"></script>
 </body>
