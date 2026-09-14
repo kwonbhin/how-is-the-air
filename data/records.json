@@ -7,10 +7,10 @@
       "source_name": "Open-Meteo 대기질 API (서울 초미세먼지 PM2.5)",
       "source_url": "https://air-quality-api.open-meteo.com/v1/air-quality?latitude=37.5665&longitude=126.9780&current=pm2_5&timezone=Asia%2FSeoul",
       "source_time": "2026-09-14T11:00:00+09:00",
-      "fetched_at": "2026-09-14T02:29:06.264Z",
+      "fetched_at": "2026-09-14T02:29:38.922Z",
       "record_timezone": "Asia/Seoul",
       "record_date": "2026-09-14",
-      "updated_at": "2026-09-14T02:29:06.280Z"
+      "updated_at": "2026-09-14T02:29:38.936Z"
     }
   ]
 }
