@@ -105,10 +105,11 @@ body {
 .meta-row b { color: var(--ink-2); font-weight: 600; }
 .meta-row a { color: var(--blue); text-decoration: none; }
 .stale-tag {
-  display: inline-block;
-  margin-left: 6px;
-  padding: 2px 8px;
-  font-size: 0.7rem;
+  display: block;
+  width: fit-content;
+  margin-top: 8px;
+  padding: 3px 10px;
+  font-size: 0.72rem;
   border-radius: 999px;
   background: var(--red-50);
   color: var(--red);
