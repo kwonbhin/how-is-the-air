@@ -3,35 +3,57 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>지금, 우리 동네 공기 — 대구 초미세먼지(PM2.5)</title>
+<title>지금, 대구 공기 — 초미세먼지(PM2.5)</title>
 <meta name="description" content="비개인 공개 원천(Open-Meteo 대기질 API)으로 지금 이 순간 대구의 초미세먼지(PM2.5) 농도를 매일 기록하고, 데이터가 오지 않을 때도 정직하게 상태를 보여주는 정보판" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="style.css" />
 </head>
-<body data-theme="day">
+<body>
+  <div class="sheet">
  
-  <!-- 배경: 시간대별 하늘 + 해/달 + 미세먼지 뿌연 효과 -->
-  <div class="sky-backdrop" aria-hidden="true">
-    <div class="sky-stars"></div>
-    <div class="sky-orb" id="sky-orb"></div>
-    <div class="haze-layer" id="haze-layer"></div>
-  </div>
- 
-  <div class="dashboard">
-    <header class="dash-header">
-      <div>
-        <h1>지금, 우리 동네 공기</h1>
-        <p class="dash-sub">대구 초미세먼지(PM2.5) · <span id="theme-label">낮</span> 하늘</p>
+    <!-- 마스트헤드: 레퍼런스의 굵은 포스터 타이포 -->
+    <header class="masthead">
+      <div class="tick-row">
+        <span>AIR CHECK</span><span>DAEGU</span><span>PM2.5</span><span>REAL DATA</span><span>NO KEY</span>
       </div>
-      <div id="air-badge" class="air-badge">불러오는 중…</div>
+      <h1 class="giant-title">지금 대구 공기</h1>
+      <div class="tick-row tick-row-sub">
+        <span>초미세먼지</span><span id="theme-label-date">-</span><span>Asia/Seoul</span>
+      </div>
     </header>
  
-    <main class="dash-grid">
-      <!-- 왼쪽: 실제 공개 기록 -->
-      <section class="panel" id="public-record-card" aria-labelledby="public-record-title">
-        <h2 id="public-record-title">지금까지의 기록 <span class="badge badge-live">실제 데이터</span></h2>
+    <!-- 본문: 중앙 큰 패널 + 오른쪽 좁은 패널 -->
+    <main class="stage">
+      <section class="center-panel" id="public-record-card" aria-labelledby="public-record-title">
+        <div class="visual-row">
+          <!-- 반원형 계기판 -->
+          <div class="gauge-wrap">
+            <svg class="gauge-svg" viewBox="-5 -5 230 140">
+              <path d="M 15 110 A 95 95 0 0 1 19.65 80.64" stroke="#2ecc71" stroke-width="20" fill="none" />
+              <path d="M 19.65 80.64 A 95 95 0 0 1 39.4 46.43" stroke="#f1c40f" stroke-width="20" fill="none" />
+              <path d="M 39.4 46.43 A 95 95 0 0 1 110 15" stroke="#f0862c" stroke-width="20" fill="none" />
+              <path d="M 110 15 A 95 95 0 0 1 205 110" stroke="#e74c3c" stroke-width="20" fill="none" />
+              <line id="gauge-needle" x1="110" y1="110" x2="30" y2="110" stroke="#101828" stroke-width="4" stroke-linecap="round" transform="rotate(0 110 110)" />
+              <circle cx="110" cy="110" r="8" fill="#101828" />
+            </svg>
+            <div class="gauge-value" id="gauge-value">-</div>
+            <div class="gauge-labels">
+              <span>좋음</span><span>보통</span><span>나쁨</span><span>매우나쁨</span>
+            </div>
+          </div>
+ 
+          <!-- 정사각형 안의 대구 실루엣 + 농도 연동 뿌연 레이어 -->
+          <div class="map-wrap">
+            <svg class="map-svg" viewBox="0 0 100 100" aria-hidden="true">
+              <path class="map-blob" d="M 50 8 C 68 6 86 20 90 40 C 94 60 84 80 64 90 C 46 98 22 92 12 74 C 3 58 6 34 22 20 C 30 13 40 10 50 8 Z" />
+              <circle class="map-dot" cx="50" cy="50" r="3" />
+            </svg>
+            <div class="map-haze" id="map-haze"></div>
+            <p class="map-caption">대구 (단순화된 일러스트, 실제 지도 아님)</p>
+          </div>
+        </div>
  
         <div id="latest-reading" class="reading-block" aria-live="polite">
           <p class="loading">불러오는 중…</p>
@@ -40,13 +62,7 @@
         <div class="table-scroll">
           <table class="records-table" id="records-table">
             <thead>
-              <tr>
-                <th>날짜(KST)</th>
-                <th>PM2.5</th>
-                <th>출처 시각</th>
-                <th>조회 시각</th>
-                <th>대조</th>
-              </tr>
+              <tr><th>날짜</th><th>PM2.5</th><th>출처시각</th><th>조회시각</th><th>대조</th></tr>
             </thead>
             <tbody id="records-tbody">
               <tr><td colspan="5">불러오는 중…</td></tr>
@@ -55,47 +71,44 @@
         </div>
       </section>
  
-      <!-- 오른쪽: 다섯 가지 실패 + 복구 -->
-      <section class="panel" id="synthetic-card" aria-labelledby="synthetic-title">
-        <h2 id="synthetic-title">신호가 끊기면? <span class="badge badge-synthetic">가짜 상황극</span></h2>
+      <!-- 좁은 사이드 패널: 신호가 끊기면? -->
+      <aside class="side-panel" id="synthetic-card" aria-labelledby="synthetic-title">
+        <h2 id="synthetic-title">신호가<br/>끊기면?</h2>
+        <p class="side-hint">공식 fixture로 재현하는 가짜 상황극. 실제 값(pt 아님)에는 영향 없음.</p>
  
-        <div class="replay-steps">
+        <div class="side-steps">
           <button class="btn" data-fixture="reset">↺ 초기화</button>
           <button class="btn" data-fixture="normal-d1-a">1일차(100)</button>
           <button class="btn" data-fixture="normal-d1-b">재조회(105)</button>
         </div>
  
-        <div class="replay-steps fail-grid">
-          <button class="btn btn-fail" data-fixture="timeout"><span class="fail-emoji">🐢</span>느린 응답<small>timeout</small></button>
-          <button class="btn btn-fail" data-fixture="auth-401"><span class="fail-emoji">🔒</span>문 안 열어줌<small>401</small></button>
-          <button class="btn btn-fail" data-fixture="rate-429"><span class="fail-emoji">🙅</span>제지당함<small>429</small></button>
-          <button class="btn btn-fail" data-fixture="offline"><span class="fail-emoji">📡</span>인터넷 끊김<small>offline</small></button>
-          <button class="btn btn-fail" data-fixture="schema-break"><span class="fail-emoji">🧩</span>형식 이상<small>schema</small></button>
+        <div class="side-steps fail-list">
+          <button class="btn btn-fail" data-fixture="timeout">🐢 느린 응답 <small>timeout</small></button>
+          <button class="btn btn-fail" data-fixture="auth-401">🔒 접근 거절 <small>401</small></button>
+          <button class="btn btn-fail" data-fixture="rate-429">🙅 호출 제한 <small>429</small></button>
+          <button class="btn btn-fail" data-fixture="offline">📡 오프라인 <small>offline</small></button>
+          <button class="btn btn-fail" data-fixture="schema-break">🧩 형식 이상 <small>schema</small></button>
         </div>
  
-        <div class="replay-steps">
-          <button class="btn btn-recover" data-fixture="recover-d2">↻ 다시 시도(복구)</button>
+        <div class="side-steps">
+          <button class="btn btn-recover" data-fixture="recover-d2">↻ 복구</button>
           <button class="btn" data-fixture="normal-d2">다음날(+15)</button>
         </div>
  
         <div id="synthetic-status" class="status-panel" aria-live="polite">
-          <p class="loading">순서: 1일차 → 재조회 → 실패 하나 → 다시 시도</p>
+          <p class="loading">순서: 1일차→재조회→실패→복구</p>
         </div>
  
         <div class="table-scroll small">
           <table class="records-table" id="synthetic-table">
-            <thead>
-              <tr><th>날짜</th><th>값(pt)</th><th>상태</th><th>코드</th></tr>
-            </thead>
-            <tbody id="synthetic-tbody">
-              <tr><td colspan="4">아직 없음</td></tr>
-            </tbody>
+            <thead><tr><th>날짜</th><th>값</th><th>상태</th></tr></thead>
+            <tbody id="synthetic-tbody"><tr><td colspan="3">없음</td></tr></tbody>
           </table>
         </div>
-      </section>
+      </aside>
     </main>
  
-    <footer class="dash-footer">
+    <footer class="page-footer">
       <p>출처: <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a> (CC BY 4.0) · 열쇠 없이 누구나 이용 가능</p>
     </footer>
   </div>
