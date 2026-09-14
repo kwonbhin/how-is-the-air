@@ -34,6 +34,30 @@ const AIR_LEVELS = [
   { max: Infinity, label: "매우나쁨", cls: "very-bad" },
 ];
  
+// 값(µg/m³) → 하늘색. 0/15 지점은 맑은 하늘색, 35는 옅은 하늘색,
+// 75는 갈색, 150은 짙은 갈색이 되도록 구간별로 선형 보간합니다.
+const SKY_COLOR_STOPS = [
+  { v: 0, rgb: [110, 193, 255] }, // 좋음 시작 — 맑은 하늘색
+  { v: 15, rgb: [110, 193, 255] }, // 좋음 끝까지 유지
+  { v: 35, rgb: [190, 205, 210] }, // 보통 끝 — 옅어진 하늘색
+  { v: 75, rgb: [163, 130, 89] }, // 나쁨 끝 — 갈색
+  { v: 150, rgb: [74, 51, 36] }, // 매우나쁨 — 짙은 갈색
+];
+ 
+function skyColorForValue(value) {
+  const v = Math.min(150, Math.max(0, value));
+  for (let i = 0; i < SKY_COLOR_STOPS.length - 1; i++) {
+    const a = SKY_COLOR_STOPS[i];
+    const b = SKY_COLOR_STOPS[i + 1];
+    if (v >= a.v && v <= b.v) {
+      const t = b.v === a.v ? 0 : (v - a.v) / (b.v - a.v);
+      const rgb = a.rgb.map((c, idx) => Math.round(c + (b.rgb[idx] - c) * t));
+      return `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`;
+    }
+  }
+  return `rgb(${SKY_COLOR_STOPS.at(-1).rgb.join(", ")})`;
+}
+ 
 function angleForValue(v) {
   const clamped = Math.min(GAUGE_MAX, Math.max(0, v));
   return 180 - (clamped / GAUGE_MAX) * 180; // 180=왼쪽(0) → 90=위(중간) → 0=오른쪽(최대)
@@ -61,16 +85,16 @@ function getLevel(value) {
 function applyAirVisuals(value) {
   updateGaugeNeedle(value);
  
-  const haze = document.getElementById("map-haze");
-  if (haze) {
-    // 0~150 µg/m³ 범위를 뿌연 정도(투명도) 0.08~0.8으로 매핑
-    const opacity = Math.min(0.8, Math.max(0.08, value / 150));
-    haze.style.opacity = String(opacity);
-  }
+  const dustCloud = document.getElementById("dust-cloud");
+  if (dustCloud) dustCloud.style.color = skyColorForValue(value);
+ 
+  const level = getLevel(value);
+ 
+  const caption = document.getElementById("map-caption");
+  if (caption) caption.textContent = `초미세먼지 입자 · ${level.label}`;
  
   const pill = document.getElementById("level-pill");
   if (pill) {
-    const level = getLevel(value);
     pill.textContent = level.label;
     pill.className = `level-pill ${level.cls}`;
   }
