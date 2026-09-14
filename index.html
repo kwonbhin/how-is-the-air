@@ -5,108 +5,114 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>지금, 대구 공기 — 초미세먼지(PM2.5)</title>
 <meta name="description" content="비개인 공개 원천(Open-Meteo 대기질 API)으로 지금 이 순간 대구의 초미세먼지(PM2.5) 농도를 매일 기록하고, 데이터가 오지 않을 때도 정직하게 상태를 보여주는 정보판" />
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
 <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div class="sheet">
+  <div class="page">
  
-    <!-- 마스트헤드: 레퍼런스의 굵은 포스터 타이포 -->
-    <header class="masthead">
-      <div class="tick-row">
-        <span>AIR CHECK</span><span>DAEGU</span><span>PM2.5</span><span>REAL DATA</span><span>NO KEY</span>
-      </div>
-      <h1 class="giant-title">지금 대구 공기</h1>
-      <div class="tick-row tick-row-sub">
-        <span>초미세먼지</span><span id="theme-label-date">-</span><span>Asia/Seoul</span>
-      </div>
+    <header class="topbar">
+      <span class="eyebrow-pill">DAEGU · PM2.5</span>
+      <h1>지금, 대구 공기</h1>
+      <p class="topbar-sub">공식 공개 데이터로 매일 기록하고, 값을 못 가져올 때도 숨기지 않아요.</p>
     </header>
  
-    <!-- 본문: 중앙 큰 패널 + 오른쪽 좁은 패널 -->
-    <main class="stage">
-      <section class="center-panel" id="public-record-card" aria-labelledby="public-record-title">
-        <div class="visual-row">
-          <!-- 반원형 계기판 -->
-          <div class="gauge-wrap">
-            <svg class="gauge-svg" viewBox="-5 -5 230 140">
-              <path d="M 15 110 A 95 95 0 0 1 19.65 80.64" stroke="#2ecc71" stroke-width="20" fill="none" />
-              <path d="M 19.65 80.64 A 95 95 0 0 1 39.4 46.43" stroke="#f1c40f" stroke-width="20" fill="none" />
-              <path d="M 39.4 46.43 A 95 95 0 0 1 110 15" stroke="#f0862c" stroke-width="20" fill="none" />
-              <path d="M 110 15 A 95 95 0 0 1 205 110" stroke="#e74c3c" stroke-width="20" fill="none" />
-              <line id="gauge-needle" x1="110" y1="110" x2="30" y2="110" stroke="#101828" stroke-width="4" stroke-linecap="round" transform="rotate(0 110 110)" />
-              <circle cx="110" cy="110" r="8" fill="#101828" />
-            </svg>
-            <div class="gauge-value" id="gauge-value">-</div>
-            <div class="gauge-labels">
-              <span>좋음</span><span>보통</span><span>나쁨</span><span>매우나쁨</span>
-            </div>
-          </div>
- 
-          <!-- 정사각형 안의 대구 실루엣 + 농도 연동 뿌연 레이어 -->
-          <div class="map-wrap">
-            <svg class="map-svg" viewBox="0 0 100 100" aria-hidden="true">
-              <path class="map-blob" d="M 50 8 C 68 6 86 20 90 40 C 94 60 84 80 64 90 C 46 98 22 92 12 74 C 3 58 6 34 22 20 C 30 13 40 10 50 8 Z" />
-              <circle class="map-dot" cx="50" cy="50" r="3" />
-            </svg>
-            <div class="map-haze" id="map-haze"></div>
-            <p class="map-caption">대구 (단순화된 일러스트, 실제 지도 아님)</p>
+    <!-- 히어로: 현재 값 -->
+    <section class="card hero-card" id="public-record-card" aria-labelledby="public-record-title">
+      <div class="hero-top">
+        <div>
+          <p class="label-muted" id="public-record-title">지금 초미세먼지</p>
+          <div class="hero-value" id="latest-reading">
+            <span class="loading">불러오는 중…</span>
           </div>
         </div>
+        <span id="level-pill" class="level-pill">-</span>
+      </div>
+      <div id="delta-line" class="delta-line"></div>
+      <div class="divider"></div>
+      <div id="meta-row" class="meta-row"></div>
+    </section>
  
-        <div id="latest-reading" class="reading-block" aria-live="polite">
-          <p class="loading">불러오는 중…</p>
-        </div>
- 
-        <div class="table-scroll">
-          <table class="records-table" id="records-table">
-            <thead>
-              <tr><th>날짜</th><th>PM2.5</th><th>출처시각</th><th>조회시각</th><th>대조</th></tr>
-            </thead>
-            <tbody id="records-tbody">
-              <tr><td colspan="5">불러오는 중…</td></tr>
-            </tbody>
-          </table>
+    <!-- 계기판 + 지도 -->
+    <div class="grid-2">
+      <section class="card">
+        <p class="label-muted">등급 게이지</p>
+        <div class="gauge-wrap">
+          <svg class="gauge-svg" viewBox="0 0 220 130">
+            <path d="M 15 110 A 95 95 0 0 1 19.65 80.64" stroke="#4CD787" stroke-width="14" fill="none" stroke-linecap="round" />
+            <path d="M 19.65 80.64 A 95 95 0 0 1 39.4 46.43" stroke="#FFC64B" stroke-width="14" fill="none" stroke-linecap="round" />
+            <path d="M 39.4 46.43 A 95 95 0 0 1 110 15" stroke="#FF9142" stroke-width="14" fill="none" stroke-linecap="round" />
+            <path d="M 110 15 A 95 95 0 0 1 205 110" stroke="#F04452" stroke-width="14" fill="none" stroke-linecap="round" />
+            <line id="gauge-needle" x1="110" y1="110" x2="35" y2="110" stroke="#191F28" stroke-width="3.5" stroke-linecap="round" />
+            <circle cx="110" cy="110" r="6" fill="#191F28" />
+          </svg>
+          <div class="gauge-labels">
+            <span>좋음</span><span>보통</span><span>나쁨</span><span>매우나쁨</span>
+          </div>
         </div>
       </section>
  
-      <!-- 좁은 사이드 패널: 신호가 끊기면? -->
-      <aside class="side-panel" id="synthetic-card" aria-labelledby="synthetic-title">
-        <h2 id="synthetic-title">신호가<br/>끊기면?</h2>
-        <p class="side-hint">공식 fixture로 재현하는 가짜 상황극. 실제 값(pt 아님)에는 영향 없음.</p>
- 
-        <div class="side-steps">
-          <button class="btn" data-fixture="reset">↺ 초기화</button>
-          <button class="btn" data-fixture="normal-d1-a">1일차(100)</button>
-          <button class="btn" data-fixture="normal-d1-b">재조회(105)</button>
+      <section class="card">
+        <p class="label-muted">대구 하늘 (일러스트)</p>
+        <div class="map-wrap">
+          <svg class="map-svg" viewBox="0 0 100 100" aria-hidden="true">
+            <rect x="0" y="0" width="100" height="100" rx="18" fill="#E8F3FF" />
+            <path class="map-blob" d="M 50 12 C 66 10 82 24 85 42 C 88 60 78 78 60 86 C 44 93 24 88 15 72 C 7 58 10 36 24 24 C 31 18 40 14 50 12 Z" fill="#BBD9FF" />
+            <circle cx="50" cy="50" r="3" fill="#3182F6" />
+          </svg>
+          <div class="map-haze" id="map-haze"></div>
         </div>
+        <p class="caption-muted">실제 지도가 아닌 단순화된 일러스트예요</p>
+      </section>
+    </div>
  
-        <div class="side-steps fail-list">
-          <button class="btn btn-fail" data-fixture="timeout">🐢 느린 응답 <small>timeout</small></button>
-          <button class="btn btn-fail" data-fixture="auth-401">🔒 접근 거절 <small>401</small></button>
-          <button class="btn btn-fail" data-fixture="rate-429">🙅 호출 제한 <small>429</small></button>
-          <button class="btn btn-fail" data-fixture="offline">📡 오프라인 <small>offline</small></button>
-          <button class="btn btn-fail" data-fixture="schema-break">🧩 형식 이상 <small>schema</small></button>
+    <!-- 일별 기록 -->
+    <section class="card">
+      <p class="label-muted">날짜별 기록</p>
+      <div class="list-table">
+        <div class="list-row list-head">
+          <span>날짜</span><span>PM2.5</span><span>출처시각</span><span>조회시각</span><span></span>
         </div>
+        <div id="records-tbody"><p class="loading">불러오는 중…</p></div>
+      </div>
+    </section>
  
-        <div class="side-steps">
-          <button class="btn btn-recover" data-fixture="recover-d2">↻ 복구</button>
-          <button class="btn" data-fixture="normal-d2">다음날(+15)</button>
-        </div>
+    <!-- 신호가 끊기면? -->
+    <section class="card" id="synthetic-card" aria-labelledby="synthetic-title">
+      <div class="section-head">
+        <p class="label-muted" id="synthetic-title">신호가 끊기면?</p>
+        <span class="tag-soft">가짜 상황극 · 실제 아님</span>
+      </div>
+      <p class="caption-muted">공식 배포 fixture로 재현하는 연습 상황이에요. 실제 대기질 값에는 영향이 없어요.</p>
  
-        <div id="synthetic-status" class="status-panel" aria-live="polite">
-          <p class="loading">순서: 1일차→재조회→실패→복구</p>
-        </div>
+      <div class="btn-row">
+        <button class="btn btn-ghost" data-fixture="reset">↺ 초기화</button>
+        <button class="btn btn-ghost" data-fixture="normal-d1-a">1일차 조회 (100)</button>
+        <button class="btn btn-ghost" data-fixture="normal-d1-b">재조회 (105)</button>
+      </div>
  
-        <div class="table-scroll small">
-          <table class="records-table" id="synthetic-table">
-            <thead><tr><th>날짜</th><th>값</th><th>상태</th></tr></thead>
-            <tbody id="synthetic-tbody"><tr><td colspan="3">없음</td></tr></tbody>
-          </table>
-        </div>
-      </aside>
-    </main>
+      <div class="btn-grid">
+        <button class="btn btn-fail" data-fixture="timeout"><span>🐢</span>느린 응답<small>timeout</small></button>
+        <button class="btn btn-fail" data-fixture="auth-401"><span>🔒</span>접근 거절<small>401</small></button>
+        <button class="btn btn-fail" data-fixture="rate-429"><span>🙅</span>호출 제한<small>429</small></button>
+        <button class="btn btn-fail" data-fixture="offline"><span>📡</span>오프라인<small>offline</small></button>
+        <button class="btn btn-fail" data-fixture="schema-break"><span>🧩</span>형식 이상<small>schema</small></button>
+      </div>
+ 
+      <div class="btn-row">
+        <button class="btn btn-primary" data-fixture="recover-d2">↻ 다시 시도해서 복구</button>
+        <button class="btn btn-ghost" data-fixture="normal-d2">다음날 정상조회 (+15)</button>
+      </div>
+ 
+      <div id="synthetic-status" class="status-box" aria-live="polite">
+        <p class="loading">순서: 1일차 조회 → 재조회 → 실패 하나 → 복구</p>
+      </div>
+ 
+      <div class="list-table small">
+        <div class="list-row list-head"><span>날짜</span><span>값</span><span>상태</span></div>
+        <div id="synthetic-tbody"><p class="caption-muted">아직 없음</p></div>
+      </div>
+    </section>
  
     <footer class="page-footer">
       <p>출처: <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a> (CC BY 4.0) · 열쇠 없이 누구나 이용 가능</p>
