@@ -34,6 +34,11 @@ const AIR_LEVELS = [
   { max: Infinity, label: "매우나쁨", cls: "very-bad" },
 ];
  
+// 오늘(Asia/Seoul) 날짜를 record_date와 같은 형식(YYYY-MM-DD)으로 반환
+function todayKstDateStr() {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul" }).format(new Date());
+}
+ 
 // 값(µg/m³) → 하늘색. 0/15 지점은 맑은 하늘색, 35는 옅은 하늘색,
 // 75는 갈색, 150은 짙은 갈색이 되도록 구간별로 선형 보간합니다.
 const SKY_COLOR_STOPS = [
@@ -123,7 +128,13 @@ async function loadPublicRecords() {
     const { delta, prev, latest } = computeDelta(records, LIVE_SIGNAL_ID);
     applyAirVisuals(latest.normalized_value);
  
-    valueEl.innerHTML = `${fmt1(latest.normalized_value)}<span class="unit">${escapeHtml(latest.unit)}</span>`;
+    const today = todayKstDateStr();
+    const isStale = latest.record_date !== today;
+    const staleBadge = isStale
+      ? `<span class="stale-tag">오래된 값 · 최근 수집 실패 가능 (마지막 성공: ${escapeHtml(latest.record_date)})</span>`
+      : "";
+ 
+    valueEl.innerHTML = `${fmt1(latest.normalized_value)}<span class="unit">${escapeHtml(latest.unit)}</span>${staleBadge}`;
  
     deltaEl.innerHTML =
       delta === null
