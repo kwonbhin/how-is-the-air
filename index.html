@@ -11,8 +11,7 @@
 <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-
-  <!-- ============ 히어로: 지금 이 순간 숫자 하나 ============ -->
+ 
   <header class="hero">
     <div class="hero-sky" aria-hidden="true">
       <svg class="drift-path-svg" viewBox="0 0 1200 200" preserveAspectRatio="none">
@@ -38,48 +37,24 @@
         </g>
       </svg>
     </div>
-
-    <p class="eyebrow">지금 서울 하늘엔</p>
-    <div id="hero-count" class="hero-count" aria-live="polite">
-      <span class="loading">재는 중…</span>
-    </div>
-    <p class="hero-caption">초미세먼지(PM2.5) 농도예요. 세계보건기구(WHO)가 쓰는 것과 같은 단위(µg/m³)로 재요.</p>
+    <h1 class="page-title">지금, 우리 동네 공기</h1>
+    <p class="hero-caption">서울 초미세먼지(PM2.5) 실측 기록</p>
   </header>
-
+ 
   <main>
-
-    <!-- ============ 이게 뭐하는 페이지인지 ============ -->
-    <section class="card intro-card">
-      <h2>이 페이지는 뭐예요?</h2>
-      <p>
-        하루에 한 번, 실제 대기질 데이터(<a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a>)에서
-        "지금 서울 공기에 초미세먼지가 얼마나 있는지"를 가져와 기록해요. 매일 값이 달라지는 걸 지켜보고, 어제와 비교하는 게 이 페이지의 핵심이에요.
-      </p>
-      <p>
-        진짜 포인트는 따로 있어요 — <strong>값을 못 가져오는 날에도 거짓말하지 않는 것</strong>. 서버가 응답이 없거나,
-        너무 오래 걸리거나, 인터넷이 끊겨도 이 페이지는 "모르겠음"을 숨기지 않고 그대로 보여줘요.
-        아래 <a href="#test-section">④ 신호가 끊기면?</a> 에서 직접 눌러볼 수 있어요.
-      </p>
-    </section>
-
-    <!-- ============ 카드 1·4·5: 공개 보존 기록 ============ -->
+ 
+    <!-- 카드1·4·5: 실제 공개 기록 (값·단위·출처·시각·시간대 + 일별 기록) -->
     <section class="card" id="public-record-card" aria-labelledby="public-record-title">
-      <h2 id="public-record-title">① 지금까지의 기록 <span class="badge badge-live">실제 데이터</span></h2>
+      <h2 id="public-record-title">지금까지의 기록 <span class="badge badge-live">실제 데이터</span></h2>
       <p class="hint">
-        매일 자동으로(대기질을 재는 프로그램이 GitHub 서버에서 자동 실행) 이 저장소의
-        <code>data/records.json</code>에 저장된 기록이에요. 누가 봐도 로그인 없이 똑같이 보여요.
+        매일 자동으로(GitHub Actions가 서버에서 실행) 이 저장소의 <code>data/records.json</code>에 저장된 기록이에요.
+        로그인 없이 누구나 같은 화면을 봅니다.
       </p>
-
+ 
       <div id="latest-reading" class="reading-block" aria-live="polite">
         <p class="loading">불러오는 중…</p>
       </div>
-
-      <h3>날짜별 농도 그래프</h3>
-      <p class="hint small">막대가 길수록 그날 초미세먼지가 많았다는 뜻이에요.</p>
-      <div id="value-strip" class="value-strip">
-        <p class="loading">불러오는 중…</p>
-      </div>
-
+ 
       <table class="records-table" id="records-table">
         <thead>
           <tr>
@@ -95,44 +70,21 @@
         </tbody>
       </table>
     </section>
-
-    <!-- ============ 카드 2: 비밀 없는 호출 안내 ============ -->
-    <section class="card" id="no-secret-card">
-      <h2>② 아무 열쇠 없이 물어봐요</h2>
+ 
+    <!-- 카드3: 다섯 가지 실패 + 복구 -->
+    <section class="card" id="synthetic-card" aria-labelledby="synthetic-title">
+      <h2 id="synthetic-title">신호가 끊기면? <span class="badge badge-synthetic">가짜 상황극 · 실제 아님</span></h2>
       <p class="hint">
-        이 페이지가 쓰는 대기질 데이터는 API 키(비밀 열쇠) 없이 아무나 물어볼 수 있는 공개 창구예요.
-        브라우저 개발자 도구의 네트워크 탭을 열어봐도 숨겨진 비밀값이 하나도 없어요.
+        아래 버튼은 공식 배포 fixture로 "값을 못 가져올 때" 5가지 상황을 재현합니다.
+        진짜 대기질 데이터에는 영향 없고, 값도 실제 PM2.5가 아니라 연습용 숫자(pt)예요.
       </p>
-      <p class="source-line">
-        데이터 출처: <a id="source-url-link" href="#" target="_blank" rel="noopener">Open-Meteo Air Quality API</a>
-      </p>
-    </section>
-
-    <!-- ============ 지금 이 브라우저에서 실시간 조회 ============ -->
-    <section class="card" id="live-demo-card">
-      <h2>③ 지금 다시 한 번 재보기</h2>
-      <p class="hint">
-        위 기록과는 별개로, 지금 이 순간 이 브라우저에서 직접 물어봐서 "원래 응답 → 저장한 값 → 화면에 보이는 값"이
-        정말 같은지 눈으로 확인하는 코너예요. (여기서 누른 결과는 이 기록에는 반영되지 않아요, 순수 데모예요.)
-      </p>
-      <button id="live-fetch-btn" class="btn btn-primary">🌫 지금 재보기</button>
-      <div id="live-demo-result" class="reading-block" hidden></div>
-    </section>
-
-    <!-- ============ 카드 3: 다섯 가지 실패 + 복구 ============ -->
-    <section class="card" id="synthetic-card" aria-labelledby="synthetic-title" tabindex="-1">
-      <h2 id="synthetic-title"><a id="test-section"></a>④ 신호가 끊기면? <span class="badge badge-synthetic">가짜 상황극 · 실제 아님</span></h2>
-      <p class="hint">
-        아래 버튼들은 "만약 이런 상황이면 화면이 어떻게 보일까"를 미리 짜여진 연습 상황(공식 배포 fixture)으로
-        재현해 보는 코너예요. 진짜 대기질 데이터에는 전혀 영향을 주지 않고, 값도 실제 PM2.5 농도가 아니라 연습용 숫자(pt)예요.
-      </p>
-
+ 
       <div class="replay-steps">
         <button class="btn" data-fixture="reset">↺ 연습 초기화</button>
         <button class="btn" data-fixture="normal-d1-a">1일차 첫 조회 (100)</button>
         <button class="btn" data-fixture="normal-d1-b">1일차 재조회 (105, 같은 행 갱신)</button>
       </div>
-
+ 
       <p class="hint small" style="margin-top:16px;">위 두 개를 먼저 누른 다음, 아래 다섯 상황 중 하나를 눌러보세요 →</p>
       <div class="replay-steps fail-grid">
         <button class="btn btn-fail" data-fixture="timeout">
@@ -156,17 +108,16 @@
           <small>schema_error</small>
         </button>
       </div>
-
+ 
       <div class="replay-steps" style="margin-top:16px;">
         <button class="btn btn-recover" data-fixture="recover-d2">↻ 다시 시도해서 복구되는지 보기</button>
         <button class="btn" data-fixture="normal-d2">다음날 정상 조회 직접 보기 (+15)</button>
       </div>
-
+ 
       <div id="synthetic-status" class="status-panel" aria-live="polite">
         <p class="loading">위 버튼을 눌러 시작하세요. (순서: 1일차 첫 조회 → 1일차 재조회 → 실패 상황 하나 → 다시 시도)</p>
       </div>
-
-      <h3>연습용 기록</h3>
+ 
       <table class="records-table" id="synthetic-table">
         <thead>
           <tr><th>연습용 날짜</th><th>값(pt)</th><th>상태</th><th>원인 코드</th></tr>
@@ -176,22 +127,13 @@
         </tbody>
       </table>
     </section>
-
-    <section class="card policy-card">
-      <h2>약속한 것들</h2>
-      <ul>
-        <li>이 페이지와 소스 저장소 어디에도 개인정보나 개인 기록은 없어요.</li>
-        <li>위 다섯 상황은 전부 연습용 자료만 쓰고, 진짜 대기질 데이터 서버에는 아무 부담도 주지 않아요.</li>
-        <li>값을 못 가져와도 예전 값은 절대 안 지우고, "오래됐어요" 표시만 붙여요.</li>
-        <li>같은 날 여러 번 조회해도 하루엔 기록이 한 줄만 남고, 날짜가 바뀌면 새 줄이 생겨요.</li>
-      </ul>
-    </section>
   </main>
-
+ 
   <footer class="page-footer">
-    <p>데이터 출처: <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a> — 비개인 공개 대기질 데이터, 열쇠(API 키) 없이 누구나 이용 가능.</p>
+    <p>데이터 출처: <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a> (CC BY 4.0) — 열쇠(API 키) 없이 누구나 이용 가능.</p>
   </footer>
-
+ 
   <script type="module" src="app.js"></script>
 </body>
 </html>
+ 
