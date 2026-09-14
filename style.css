@@ -132,22 +132,10 @@ body {
   color: var(--ink-3);
 }
  
-.map-wrap { position: relative; display: flex; justify-content: center; }
+.map-wrap { display: flex; justify-content: center; }
 .map-svg { width: 100%; max-width: 200px; aspect-ratio: 1 / 1; border-radius: var(--radius-md); display: block; }
-.map-haze {
-  position: absolute;
-  top: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 100%;
-  max-width: 200px;
-  aspect-ratio: 1 / 1;
-  background: #6b7280;
-  opacity: 0.1;
-  border-radius: var(--radius-md);
-  transition: opacity 1.2s ease;
-  pointer-events: none;
-}
+#dust-cloud { transition: color 1.2s ease; }
+#dust-cloud circle { transition: fill-opacity 0.3s ease; }
  
 /* ============ 리스트형 표 ============ */
 .list-table { font-size: 0.86rem; }
