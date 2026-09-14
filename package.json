@@ -1,0 +1,14 @@
+{
+  "name": "t04-realtime-board",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "오늘의 진짜 정보판 — 서울 현재기온을 매일 기록하고 실패 상태를 정직하게 보여주는 정적 웹 앱",
+  "scripts": {
+    "collect": "node scripts/collect.mjs",
+    "test": "node --test tests/"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
