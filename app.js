@@ -20,113 +20,130 @@ const FRIENDLY_ERROR = {
 };
  
 /* ============================================================
- * 계기판(반원형) + 지도 뿌연 효과 — 미세먼지 값 시각화
+ * 게이지 바늘 + 지도 뿌연 효과 + 등급 배지
  * (등급 구간은 한국 환경부 PM2.5 등급을 단순화한 참고용입니다)
  * ============================================================ */
-const GAUGE_MAX = 150; // 계기판이 표현하는 최대값(µg/m³). 이보다 크면 바늘이 끝에 고정됨
+const GAUGE_MAX = 150; // 게이지가 표현하는 최대값(µg/m³). 이보다 크면 바늘이 끝에 고정됨
+const GAUGE_CENTER = { x: 110, y: 110 };
+const GAUGE_NEEDLE_LEN = 75;
+ 
 const AIR_LEVELS = [
-  { max: 15, label: "좋음" },
-  { max: 35, label: "보통" },
-  { max: 75, label: "나쁨" },
-  { max: Infinity, label: "매우나쁨" },
+  { max: 15, label: "좋음", cls: "good" },
+  { max: 35, label: "보통", cls: "moderate" },
+  { max: 75, label: "나쁨", cls: "bad" },
+  { max: Infinity, label: "매우나쁨", cls: "very-bad" },
 ];
  
-function applyAirVisuals(value) {
+function angleForValue(v) {
+  const clamped = Math.min(GAUGE_MAX, Math.max(0, v));
+  return 180 - (clamped / GAUGE_MAX) * 180; // 180=왼쪽(0) → 90=위(중간) → 0=오른쪽(최대)
+}
+ 
+/**
+ * 바늘 끝 좌표를 삼각함수로 직접 계산해서 x2,y2에 넣습니다.
+ * (CSS rotate/transform-origin을 섞어 쓰면 SVG에서 방향이 꼬이기 쉬워서,
+ *  아치(arc) 좌표를 만들 때 쓴 것과 똑같은 방식으로 계산해 일관성을 맞췄습니다.)
+ */
+function updateGaugeNeedle(value) {
   const needle = document.getElementById("gauge-needle");
-  const gaugeValue = document.getElementById("gauge-value");
+  if (!needle) return;
+  const rad = (angleForValue(value) * Math.PI) / 180;
+  const x2 = GAUGE_CENTER.x + GAUGE_NEEDLE_LEN * Math.cos(rad);
+  const y2 = GAUGE_CENTER.y - GAUGE_NEEDLE_LEN * Math.sin(rad);
+  needle.setAttribute("x2", x2.toFixed(1));
+  needle.setAttribute("y2", y2.toFixed(1));
+}
+ 
+function getLevel(value) {
+  return AIR_LEVELS.find((l) => value <= l.max);
+}
+ 
+function applyAirVisuals(value) {
+  updateGaugeNeedle(value);
+ 
   const haze = document.getElementById("map-haze");
- 
-  const clamped = Math.min(GAUGE_MAX, Math.max(0, value));
-  const deg = (clamped / GAUGE_MAX) * 180;
-  if (needle) needle.setAttribute("transform", `rotate(${deg} 110 110)`);
- 
-  const level = AIR_LEVELS.find((l) => value <= l.max);
-  if (gaugeValue) gaugeValue.textContent = `${fmt1(value)}µg/m³ · ${level.label}`;
- 
   if (haze) {
-    // 0~150 µg/m³ 범위를 뿌연 정도(투명도) 0.08~0.78로 매핑
-    const opacity = Math.min(0.78, Math.max(0.08, value / 150));
+    // 0~150 µg/m³ 범위를 뿌연 정도(투명도) 0.08~0.8으로 매핑
+    const opacity = Math.min(0.8, Math.max(0.08, value / 150));
     haze.style.opacity = String(opacity);
+  }
+ 
+  const pill = document.getElementById("level-pill");
+  if (pill) {
+    const level = getLevel(value);
+    pill.textContent = level.label;
+    pill.className = `level-pill ${level.cls}`;
   }
 }
  
-function setTodayLabel() {
-  const el = document.getElementById("theme-label-date");
-  if (!el) return;
-  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul" }).format(new Date());
-  el.textContent = today;
-}
- 
 /* ============================================================
- * ① 공개 보존 기록 렌더
+ * 공개 보존 기록 렌더 (히어로 + 메타 + 리스트형 표)
  * ============================================================ */
 async function loadPublicRecords() {
-  const container = document.getElementById("latest-reading");
-  const tbody = document.getElementById("records-tbody");
+  const valueEl = document.getElementById("latest-reading");
+  const deltaEl = document.getElementById("delta-line");
+  const metaEl = document.getElementById("meta-row");
+  const listEl = document.getElementById("records-tbody");
+ 
   try {
     const res = await fetch("data/records.json", { cache: "no-store" });
     const store = await res.json();
     const records = (store.records || []).filter((r) => r.signal_id === LIVE_SIGNAL_ID);
  
     if (records.length === 0) {
-      container.innerHTML = `<p class="loading">아직 수집된 공개 기록이 없습니다. 첫 자동 수집(또는 수동 실행) 이후 표시됩니다.</p>`;
-      tbody.innerHTML = `<tr><td colspan="5">아직 없음</td></tr>`;
+      valueEl.innerHTML = `<span class="loading">아직 값 없음</span>`;
+      listEl.innerHTML = `<p class="loading">아직 수집된 공개 기록이 없습니다. 첫 자동 수집(또는 수동 실행) 이후 표시됩니다.</p>`;
       return;
     }
  
     const { delta, prev, latest } = computeDelta(records, LIVE_SIGNAL_ID);
     applyAirVisuals(latest.normalized_value);
  
-    const deltaLine =
-      delta === null
-        ? `<div class="reading-delta">어제 기록: 아직 비교할 이전 기록이 없어요 (첫 기록)</div>`
-        : `<div class="reading-delta ${delta >= 0 ? "up" : "down"}">어제 대비: ${
-            delta >= 0 ? "+" : ""
-          }${fmt1(delta)}${latest.unit} (직전 기록 ${prev.record_date} 대비 다시 계산한 값)</div>`;
+    valueEl.innerHTML = `${fmt1(latest.normalized_value)}<span class="unit">${escapeHtml(latest.unit)}</span>`;
  
-    container.innerHTML = `
-      <div class="reading-value">${fmt1(latest.normalized_value)}<span class="unit">${escapeHtml(latest.unit)}</span></div>
-      ${deltaLine}
-      <div class="reading-meta">
-        <div><b>출처</b>: <a href="${escapeAttr(latest.source_url)}" target="_blank" rel="noopener">${escapeHtml(latest.source_name)}</a></div>
-        <div><b>기록 날짜(KST)</b>: ${escapeHtml(latest.record_date)}</div>
-        <div><b>출처 시각</b>: ${formatKst(latest.source_time) ?? "제공 안 됨"}</div>
-        <div><b>조회 시각</b>: ${formatKst(latest.fetched_at)}</div>
-        <div><b>기준 시간대</b>: ${escapeHtml(latest.record_timezone)}</div>
-      </div>
+    deltaEl.innerHTML =
+      delta === null
+        ? `어제 대비: 아직 비교할 이전 기록이 없어요 (첫 기록)`
+        : `어제 대비: <span class="${delta >= 0 ? "up" : "down"}">${delta >= 0 ? "+" : ""}${fmt1(delta)}${
+            latest.unit
+          }</span> (직전 기록 ${prev.record_date} 대비 다시 계산한 값)`;
+ 
+    metaEl.innerHTML = `
+      <div><b>출처</b>: <a href="${escapeAttr(latest.source_url)}" target="_blank" rel="noopener">${escapeHtml(latest.source_name)}</a></div>
+      <div><b>기록 날짜(KST)</b>: ${escapeHtml(latest.record_date)}</div>
+      <div><b>출처 시각</b>: ${formatKst(latest.source_time) ?? "제공 안 됨"}</div>
+      <div><b>조회 시각</b>: ${formatKst(latest.fetched_at)}</div>
+      <div><b>기준 시간대</b>: ${escapeHtml(latest.record_timezone)}</div>
     `;
  
-    tbody.innerHTML = records
+    listEl.innerHTML = records
       .slice()
       .sort((a, b) => (a.record_date < b.record_date ? 1 : -1))
       .map(
         (r) => `
-        <tr>
-          <td>${escapeHtml(r.record_date)}</td>
-          <td>${fmt1(r.normalized_value)}${escapeHtml(r.unit)}</td>
-          <td>${formatKst(r.source_time) ?? "-"}</td>
-          <td>${formatKst(r.fetched_at)}</td>
-          <td>
+        <div class="list-row">
+          <span>${escapeHtml(r.record_date)}</span>
+          <span>${fmt1(r.normalized_value)}${escapeHtml(r.unit)}</span>
+          <span>${formatKst(r.source_time) ?? "-"}</span>
+          <span>${formatKst(r.fetched_at)}</span>
+          <span>
             <details class="raw-compare">
               <summary>대조</summary>
               <pre>${escapeHtml(
                 JSON.stringify(
-                  {
-                    저장값: { value: r.normalized_value, unit: r.unit },
-                    화면값: `${fmt1(r.normalized_value)}${r.unit}`,
-                    원자료_출처: r.source_url,
-                  },
+                  { 저장값: { value: r.normalized_value, unit: r.unit }, 화면값: `${fmt1(r.normalized_value)}${r.unit}`, 원자료_출처: r.source_url },
                   null,
                   2
                 )
               )}</pre>
             </details>
-          </td>
-        </tr>`
+          </span>
+        </div>`
       )
       .join("");
   } catch (err) {
-    container.innerHTML = `<p class="loading">공개 기록을 불러오지 못했습니다: ${escapeHtml(String(err))}</p>`;
+    valueEl.innerHTML = `<span class="loading">불러오기 실패</span>`;
+    listEl.innerHTML = `<p class="loading">공개 기록을 불러오지 못했습니다: ${escapeHtml(String(err))}</p>`;
   }
 }
  
@@ -225,31 +242,31 @@ function renderSyntheticStatus(description) {
  
   panel.innerHTML = `
     <div class="state-line ${freshnessClass}">
-      ${synthState.freshness === "fresh" ? "✅ 정상(fresh)" : synthState.freshness === "stale" ? "⚠️ 오래된 값(stale)" : "-"}
+      ${synthState.freshness === "fresh" ? "정상(fresh)" : synthState.freshness === "stale" ? "오래된 값(stale)" : "-"}
       ${friendly && synthState.error_code !== "none" ? ` · ${escapeHtml(friendly.label)} (${escapeHtml(synthState.error_code)})` : ""}
     </div>
     <div class="state-error-text">${friendly && synthState.error_code !== "none" ? escapeHtml(friendly.detail) : ""}</div>
     <div style="margin-top:6px;">마지막 정상값: ${lastGood ?? "-"}${lastGood != null ? "pt" : ""} · 기록 수: ${
     synthState.records.length
   }${delta !== null ? ` · 전일 대비: ${delta >= 0 ? "+" : ""}${delta}pt` : ""}</div>
-    <div style="margin-top:6px; color:var(--ink-soft); font-size:0.82rem;">방금 재생: ${escapeHtml(
+    <div style="margin-top:6px; color:var(--ink-3); font-size:0.78rem;">방금 재생: ${escapeHtml(
       synthState.lastFixture ?? "-"
     )} — ${escapeHtml(description ?? "")}</div>
   `;
 }
  
 function renderSyntheticTable() {
-  const tbody = document.getElementById("synthetic-tbody");
+  const listEl = document.getElementById("synthetic-tbody");
   if (synthState.records.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="3">없음</td></tr>`;
+    listEl.innerHTML = `<p class="caption-muted">아직 없음</p>`;
     return;
   }
-  tbody.innerHTML = synthState.records
+  listEl.innerHTML = synthState.records
     .slice()
     .sort((a, b) => (a.record_date < b.record_date ? -1 : 1))
     .map(
       (r) =>
-        `<tr><td>${r.record_date}</td><td>${r.normalized_value}</td><td>${synthState.freshness}/${synthState.error_code}</td></tr>`
+        `<div class="list-row"><span>${r.record_date}</span><span>${r.normalized_value}</span><span>${synthState.freshness}/${synthState.error_code}</span></div>`
     )
     .join("");
 }
@@ -270,7 +287,6 @@ function escapeAttr(str) {
  
 /* ============================================================ init ============================================================ */
 document.addEventListener("DOMContentLoaded", () => {
-  setTodayLabel();
   loadPublicRecords();
  
   document.querySelectorAll("[data-fixture]").forEach((btn) => {
