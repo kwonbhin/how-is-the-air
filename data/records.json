@@ -31,10 +31,10 @@
       "source_name": "Open-Meteo 대기질 API (대구 초미세먼지 PM2.5)",
       "source_url": "https://air-quality-api.open-meteo.com/v1/air-quality?latitude=35.8714&longitude=128.6014&current=pm2_5&timezone=Asia%2FSeoul",
       "source_time": "2026-09-15T12:00:00+09:00",
-      "fetched_at": "2026-09-15T03:03:26.881Z",
+      "fetched_at": "2026-09-15T03:16:21.070Z",
       "record_timezone": "Asia/Seoul",
       "record_date": "2026-09-15",
-      "updated_at": "2026-09-15T03:03:26.896Z"
+      "updated_at": "2026-09-15T03:16:21.091Z"
     }
   ]
 }
