@@ -419,6 +419,18 @@
       "record_timezone": "Asia/Seoul",
       "record_date": "2026-10-17",
       "updated_at": "2026-10-16T18:51:32.055Z"
+    },
+    {
+      "signal_id": "daegu-pm25",
+      "normalized_value": 6.1,
+      "unit": "μg/m³",
+      "source_name": "Open-Meteo 대기질 API (대구 초미세먼지 PM2.5)",
+      "source_url": "https://air-quality-api.open-meteo.com/v1/air-quality?latitude=35.8714&longitude=128.6014&current=pm2_5&timezone=Asia%2FSeoul",
+      "source_time": "2026-10-18T02:00:00+09:00",
+      "fetched_at": "2026-10-17T17:52:45.657Z",
+      "record_timezone": "Asia/Seoul",
+      "record_date": "2026-10-18",
+      "updated_at": "2026-10-17T17:52:45.673Z"
     }
   ]
 }
