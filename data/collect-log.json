@@ -881,6 +881,15 @@
       "row_count_after": 69,
       "stored_value": 10,
       "record_date": "2026-11-20"
+    },
+    {
+      "at": "2026-11-20T22:15:53.871Z",
+      "status": "ok",
+      "newRowAdded": true,
+      "row_count_before": 69,
+      "row_count_after": 70,
+      "stored_value": 20.7,
+      "record_date": "2026-11-21"
     }
   ]
 }
